@@ -1,31 +1,31 @@
 #include "ft_nm.h"
 
-static int symbols_64(Elf64_Ehdr *elf_header, Elf64_Shdr *shs_table, uint16_t i, char *file_content, flags_t *flags, size_t file_size)
+static int symbols_32(Elf32_Ehdr *elf_header, Elf32_Shdr *shs_table, uint16_t i, char *file_content, flags_t *flags, size_t file_size)
 {
 	char 		file_endian = elf_header->e_ident[EI_DATA];
 
 	// Get sh_link to determine string table index (sh_link of symbol table is a string table)
 	// Get sh_offset to determine where the symbol table is located
 	uint32_t	sh_link = uint32_to_host(shs_table[i].sh_link, file_endian);
-	uint64_t	sh_offset = uint64_to_host(shs_table[i].sh_offset, file_endian);
+	uint32_t	sh_offset = uint32_to_host(shs_table[i].sh_offset, file_endian);
 
 	// Get the symbol table from the file content
 	// Check if the offset is within the bounds of the file size
 	if (sh_offset >= file_size)
 		return 1;
-	Elf64_Sym	*sym_table = (Elf64_Sym *)(file_content + sh_offset);
+	Elf32_Sym	*sym_table = (Elf32_Sym *)(file_content + sh_offset);
 
 	// Get the number of symbols in the symbol table
 	// Verify symbol table entries are correct size
-	if (sizeof(Elf64_Sym) != uint64_to_host(shs_table[i].sh_entsize, file_endian))
+	if (sizeof(Elf32_Sym) != uint32_to_host(shs_table[i].sh_entsize, file_endian))
 		return 1;
-	size_t		sym_count = (uint64_to_host(shs_table[i].sh_size, file_endian) / sizeof(Elf64_Sym));
+	size_t		sym_count = (uint32_to_host(shs_table[i].sh_size, file_endian) / sizeof(Elf32_Sym));
 	
 	// Get string table from the file content
 	// check that the offset is within the bounds of the file size
-	if (uint64_to_host(shs_table[sh_link].sh_offset, file_endian) >= file_size)
+	if (uint32_to_host(shs_table[sh_link].sh_offset, file_endian) >= file_size)
 		return 1;
-	char		*str_table = file_content + uint64_to_host(shs_table[sh_link].sh_offset, file_endian);
+	char		*str_table = file_content + uint32_to_host(shs_table[sh_link].sh_offset, file_endian);
 
 	// Allocate memory for the symbols
 	sym_t		*symbols = malloc(sizeof(sym_t) * sym_count);
@@ -37,26 +37,26 @@ static int symbols_64(Elf64_Ehdr *elf_header, Elf64_Shdr *shs_table, uint16_t i,
 	// STT_NOTYPE, STT_OBJECT, STT_FUNC, STT_COMMON, STT_TLS, STT_GNU_IFUNC <- symbol types to check for
 	size_t sym_index = 0;
 	for (size_t j = 1; j < sym_count; j++) {
-		char type = ELF64_ST_TYPE(sym_table[j].st_info);
+		char type = ELF32_ST_TYPE(sym_table[j].st_info);
 		// Handle -a flag activated
 		if ((!flags->a && (type == STT_NOTYPE || type == STT_OBJECT || type == STT_FUNC ||
 			type == STT_COMMON || type == STT_TLS || type == STT_GNU_IFUNC)) || flags->a)
 		{
 			// Get symbol address (value)
-			symbols[sym_index].value = uint64_to_host(sym_table[j].st_value, file_endian);
+			symbols[sym_index].value = uint32_to_host(sym_table[j].st_value, file_endian);
 
 			// Set the letter representing the symbol type
-			symbols[sym_index].letter = get_letter_64(sym_table[j], shs_table, str_table, file_endian, elf_header);
+			symbols[sym_index].letter = get_letter_32(sym_table[j], shs_table, str_table, file_endian, elf_header);
 
 			// Get the symbol name from the string table -- Set to "(null)" if invalid
 			if (is_valid_cstring(str_table + uint32_to_host(sym_table[j].st_name, file_endian),
-				str_table + uint64_to_host(shs_table[sh_link].sh_size, file_endian)))
+				str_table + uint32_to_host(shs_table[sh_link].sh_size, file_endian)))
 				symbols[sym_index].name = str_table + uint32_to_host(sym_table[j].st_name, file_endian);
 			else
 				symbols[sym_index].name = "(null)";
 
 			// set boolean flags based on the symbol type
-			symbols[sym_index].is_external = ELF64_ST_BIND(sym_table[j].st_info) != STB_LOCAL;
+			symbols[sym_index].is_external = ELF32_ST_BIND(sym_table[j].st_info) != STB_LOCAL;
 			symbols[sym_index].is_undefined = (uint16_to_host(sym_table[j].st_shndx, file_endian) == SHN_UNDEF);
 
 			sym_index++;
@@ -74,13 +74,13 @@ static int symbols_64(Elf64_Ehdr *elf_header, Elf64_Shdr *shs_table, uint16_t i,
 	return 0;
 }
 
-int ft_nm_64(char *file_content, struct stat file_stat, char *filename, flags_t *flags)
+int ft_nm_32(char *file_content, struct stat file_stat, char *filename, flags_t *flags)
 {
-	Elf64_Ehdr	*elf_header = (Elf64_Ehdr *)file_content;
+	Elf32_Ehdr	*elf_header = (Elf32_Ehdr *)file_content;
 	// need to handle endianness
 	char 		file_endian = elf_header->e_ident[EI_DATA];
 	uint16_t	e_shnum = uint16_to_host(elf_header->e_shnum, file_endian);
-	uint64_t	e_shoff = uint64_to_host(elf_header->e_shoff, file_endian);
+	uint32_t	e_shoff = uint32_to_host(elf_header->e_shoff, file_endian);
 	uint16_t	e_shstrndx = uint16_to_host(elf_header->e_shstrndx, file_endian);
 	uint16_t	e_type = uint16_to_host(elf_header->e_type, file_endian);
 	uint16_t	e_machine = uint16_to_host(elf_header->e_machine, file_endian);
@@ -98,18 +98,18 @@ int ft_nm_64(char *file_content, struct stat file_stat, char *filename, flags_t 
 	if ((e_shnum >= SHN_LORESERVE) || (e_shoff >= file_stat.st_size))
 		return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
 
-	Elf64_Shdr	*shs_table = (Elf64_Shdr *)(file_content + e_shoff);
+	Elf32_Shdr	*shs_table = (Elf32_Shdr *)(file_content + e_shoff);
 
 	// iterate through section headers and find symbol table
 	for (uint16_t i = 0; i < e_shnum; i++) {
 		// check if we are in bounds of string table
 		// sh_name is Elf64_Word, sh_size is Elf64_Xword
-		if (uint32_to_host(shs_table[i].sh_name, file_endian) > uint64_to_host(shs_table[e_shstrndx].sh_size, file_endian))
+		if (uint32_to_host(shs_table[i].sh_name, file_endian) > uint32_to_host(shs_table[e_shstrndx].sh_size, file_endian))
 			return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
 	
 		int ret;
 		if (uint32_to_host(shs_table[i].sh_type, file_endian) == SHT_SYMTAB) {
-			if (ret = symbols_64(elf_header, shs_table, i, file_content, flags, file_stat.st_size)) {
+			if (ret = symbols_32(elf_header, shs_table, i, file_content, flags, file_stat.st_size)) {
 				if (ret == 1)
 					return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
 				else

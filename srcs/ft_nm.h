@@ -15,6 +15,7 @@
 	#include <unistd.h>		// close, write, exit, getpagesize
 	#include <stdio.h>		// perror
 	#include <stdlib.h>		// malloc, free, exit
+	#include <errno.h>
 
 	// p > r in terms of sorting
 	typedef struct flags_s {

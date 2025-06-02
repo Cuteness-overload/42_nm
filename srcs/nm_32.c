@@ -34,19 +34,13 @@ static int symbols_32(Elf32_Ehdr *elf_header, Elf32_Shdr *shs_table, uint16_t i,
 	
 	// Iterate through the symbol table and populate the symbols array
 	// First symbol entry is reserved, so we start at 1
-	// STT_NOTYPE, STT_OBJECT, STT_FUNC, STT_COMMON, STT_TLS, STT_GNU_IFUNC <- symbol types to check for
 	size_t sym_index = 0;
 	for (size_t j = 1; j < sym_count; j++) {
-		char type = ELF32_ST_TYPE(sym_table[j].st_info);
-		// Handle -a flag activated
-		if ((!flags->a && (type == STT_NOTYPE || type == STT_OBJECT || type == STT_FUNC ||
-			type == STT_COMMON || type == STT_TLS || type == STT_GNU_IFUNC)) || flags->a)
-		{
 			// Get symbol address (value)
 			symbols[sym_index].value = uint32_to_host(sym_table[j].st_value, file_endian);
 
 			// Set the letter representing the symbol type
-			symbols[sym_index].letter = get_letter_32(sym_table[j], shs_table, str_table, file_endian, elf_header);
+			symbols[sym_index].letter = get_letter_32(sym_table[j], shs_table, str_table, file_endian);
 
 			// Get the symbol name from the string table -- Set to "(null)" if invalid
 			if (is_valid_cstring(str_table + uint32_to_host(sym_table[j].st_name, file_endian),
@@ -60,21 +54,35 @@ static int symbols_32(Elf32_Ehdr *elf_header, Elf32_Shdr *shs_table, uint16_t i,
 			symbols[sym_index].is_undefined = (uint16_to_host(sym_table[j].st_shndx, file_endian) == SHN_UNDEF);
 
 			sym_index++;
-		}
 	}
 
 	// Check sort flags
-	if (!flags->p) {
+	if (!flags->p && !flags->u) {
 		if (flags->r)
 			reverse_merge_sort(symbols, 0, sym_index - 1);
 		else
 			merge_sort(symbols, 0, sym_index - 1);
 	}
 
+	for (size_t j = 0; j < sym_index; j++) {
+		if (flags->u && !symbols[j].is_undefined)
+			continue; // Skip defined symbols if -u flag is set
+		else if (flags->g && !symbols[j].is_external)
+			continue; // Skip non-external symbols if -g flag is set
+		else if (!flags->a && symbols[j].letter == 'N')
+			continue; // Skip debugging symbols if -a flag is not set
+		// now to print the symbol
+		if (symbols[j].is_undefined)
+			ft_printf("%16c %c %s\n", ' ', symbols[j].letter, symbols[j].name);
+		else
+			ft_printf("%016p %c %s\n", symbols[j].value, symbols[j].letter, symbols[j].name);
+	}
+	free(symbols);
+
 	return 0;
 }
 
-int ft_nm_32(char *file_content, struct stat file_stat, char *filename, flags_t *flags)
+int ft_nm_32(char *file_content, struct stat file_stat, const char *filename, flags_t *flags)
 {
 	Elf32_Ehdr	*elf_header = (Elf32_Ehdr *)file_content;
 	// need to handle endianness
@@ -95,7 +103,7 @@ int ft_nm_32(char *file_content, struct stat file_stat, char *filename, flags_t 
 
 	// check for e_shnum value. Cannot be greater than SHN_LORESERVE
 	// also check if e_shoff greater than file size (section header offset)
-	if ((e_shnum >= SHN_LORESERVE) || (e_shoff >= file_stat.st_size))
+	if ((e_shnum >= SHN_LORESERVE) || (e_shoff >= (long unsigned int)file_stat.st_size))
 		return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
 
 	Elf32_Shdr	*shs_table = (Elf32_Shdr *)(file_content + e_shoff);
@@ -109,7 +117,7 @@ int ft_nm_32(char *file_content, struct stat file_stat, char *filename, flags_t 
 	
 		int ret;
 		if (uint32_to_host(shs_table[i].sh_type, file_endian) == SHT_SYMTAB) {
-			if (ret = symbols_32(elf_header, shs_table, i, file_content, flags, file_stat.st_size)) {
+			if ((ret = symbols_32(elf_header, shs_table, i, file_content, flags, file_stat.st_size))) {
 				if (ret == 1)
 					return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
 				else
@@ -119,4 +127,6 @@ int ft_nm_32(char *file_content, struct stat file_stat, char *filename, flags_t 
 				return 0; // Successfully processed the symbol table
 		}
 	}
+	ft_printf("ft_nm: '%s': no symbols\n", filename);
+	return 0; // No symbol table found
 }

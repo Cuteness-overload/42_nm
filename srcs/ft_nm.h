@@ -5,7 +5,6 @@
 	#define FT_NM_H
 
 	#include "../libft/libft.h"
-	#include "../libft/printf/ft_printf.h"
 
 	#include <elf.h>		// ELF header and related structures and defines
 	#include <stdbool.h>	// bool type, true, false
@@ -40,18 +39,18 @@
 	char 		**parse_args(int argc, char **argv, flags_t *flags);
 
 	// nm_32.c
-	int 		ft_nm_32(char *file_content, struct stat file_stat, char *filename, flags_t *flags);
+	int 		ft_nm_32(char *file_content, struct stat file_stat, const char *filename, flags_t *flags);
 	
 	// nm_64.c
-	int 		ft_nm_64(char *file_content, struct stat file_stat, char *filename, flags_t *flags);
+	int 		ft_nm_64(char *file_content, struct stat file_stat, const char *filename, flags_t *flags);
 
 	//  sort.c
 	void 		merge_sort(sym_t *array, int left, int right);
 	void 		reverse_merge_sort(sym_t *array, int left, int right);
 
 	// symbols.c
-	char 		get_letter_32(Elf32_Sym sym, Elf32_Shdr *shs_table, char *str_table, char file_endian, Elf32_Ehdr *elf_header);
-	char 		get_letter_64(Elf64_Sym sym, Elf64_Shdr *shs_table, char *str_table, char file_endian, Elf64_Ehdr *elf_header);
+	char 		get_letter_32(Elf32_Sym sym, Elf32_Shdr *shs_table, char *str_table, char file_endian);
+	char 		get_letter_64(Elf64_Sym sym, Elf64_Shdr *shs_table, char *str_table, char file_endian);
 
 	// utils.c
 	bool 		is_valid_cstring(const char *str, const char *max_pointer);

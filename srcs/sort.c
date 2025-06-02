@@ -19,7 +19,7 @@ static void merge(sym_t *array, int left, int mid, int right)
 	k = left; // Initial index of merged sub-array
 
 	while (i < n1 && j < n2) {
-		if (ft_strcmp(L[i].value, R[j].value) <= 0) {
+		if (ft_strcmp((const char *)L[i].name, (const char *)R[j].name) <= 0) {
 			array[k] = L[i];
 			i++;
 		} else {
@@ -61,7 +61,7 @@ static void reverse_merge(sym_t *array, int left, int mid, int right)
 	k = left; // Initial index of merged sub-array
 
 	while (i < n1 && j < n2) {
-		if (ft_strcmp(L[i].value, R[j].value) >= 0) {
+		if (ft_strcmp((const char *)L[i].value, (const char *)R[j].value) >= 0) {
 			array[k] = L[i];
 			i++;
 		} else {

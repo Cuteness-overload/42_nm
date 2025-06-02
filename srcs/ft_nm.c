@@ -7,18 +7,18 @@ static int ft_nm_process(char *file_content, struct stat file_stat, const char *
 	{
 		if (file_content[EI_CLASS] == ELFCLASS64)
 		{
-			if (file_stat.st_size < sizeof(Elf64_Ehdr))
+			if ((long unsigned int)file_stat.st_size < sizeof(Elf64_Ehdr))
 				return ft_printf("ft_nm: '%s' file format not recognized\n", filename);
-			else if (file_stat.st_size < sizeof(Elf64_Ehdr) + sizeof(Elf64_Shdr))
+			else if ((long unsigned int)file_stat.st_size < sizeof(Elf64_Ehdr) + sizeof(Elf64_Shdr))
 				return ft_printf("ft_nm: '%s' symbol table or string table not found\n", filename);
 			else
 				return ft_nm_64(file_content, file_stat, filename, flags);
 		}
 		else if (file_content[EI_CLASS] == ELFCLASS32)
 		{
-			if (file_stat.st_size < sizeof(Elf32_Ehdr))
+			if ((long unsigned int)file_stat.st_size < sizeof(Elf32_Ehdr))
 				return ft_printf("ft_nm: '%s' file format not recognized\n", filename);
-			else if (file_stat.st_size < sizeof(Elf32_Ehdr) + sizeof(Elf32_Shdr))
+			else if ((long unsigned int)file_stat.st_size < sizeof(Elf32_Ehdr) + sizeof(Elf32_Shdr))
 				return ft_printf("ft_nm: '%s' symbol table or string table not found\n", filename);
 			else
 				return ft_nm_32(file_content, file_stat, filename, flags); // TODO: implement ft_nm_32
@@ -37,12 +37,12 @@ static int ft_nm(int fd, const char *filename, flags_t *flags)
 		return ft_printf("ft_nm: '%s': %s\n", filename, strerror(errno));
 
 	// If file is a directory, print a warning and return 1
-	if (IS_IFDIR(file_stat.st_mode))
+	if (S_ISDIR(file_stat.st_mode))
 		return ft_printf("ft_nm: Warning: '%s' Is a directory\n", filename);
 
 	// https://nathanotterness.com/2021/10/tiny_elf_modernized.html
 	// Check for minimum ELF file size (Elf32_Ehdr smaller than Elf64_Ehdr)
-	if (file_stat.st_size < sizeof(Elf32_Ehdr))
+	if ((long unsigned int)file_stat.st_size < sizeof(Elf32_Ehdr))
 		return ft_printf("ft_nm: '%s' file format not recognized\n", filename);
 
 	// mmap the file content into memory + check for failure
@@ -81,6 +81,7 @@ int main(int argc, char **argv)
 		if (ft_nm(fd, files[i], &flags) != 0)
 			err = true;
 		close(fd);
+		free(files[i]); // Free the file name after processing
 	}
 
 	// Cleanup and return

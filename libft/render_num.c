@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ft_printf.h"
+#include "libft.h"
 
 int	print_long(t_data *data, long n)
 {
@@ -72,8 +72,7 @@ int	ft_numlen_point(unsigned long n, int base)
 	int	len;
 
 	len = 1;
-	if (n < 0)
-		n = -n;
+
 	while (n > (unsigned long)base - 1)
 	{
 		len++;

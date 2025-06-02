@@ -25,7 +25,9 @@ char get_letter_64(Elf64_Sym sym, Elf64_Shdr *shs_table, char *str_table, char f
 		letter = 'c';
 	if (letter != '?')
 		return letter; // If we already have a letter, return it
-	
+	else if (shndx > SHN_LORESERVE)
+		return '?'; // If shndx is greater than SHN_LORESERVE, return '?'
+
 	// If we reach here, we need to check the section header for more information
 	const		Elf64_Shdr section = shs_table[shndx];
 	const char *section_name = str_table + uint32_to_host(section.sh_name, file_endian);

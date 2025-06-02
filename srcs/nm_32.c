@@ -69,13 +69,13 @@ static int symbols_32(Elf32_Ehdr *elf_header, Elf32_Shdr *shs_table, uint16_t i,
 			continue; // Skip defined symbols if -u flag is set
 		else if (flags->g && !symbols[j].is_external)
 			continue; // Skip non-external symbols if -g flag is set
-		else if (!flags->a && symbols[j].letter == 'N')
+		else if (!flags->a && ((symbols[j].letter == 'N') || (symbols[j].letter =='A') || (symbols[j].letter == 'a')))
 			continue; // Skip debugging symbols if -a flag is not set
 		// now to print the symbol
 		if (symbols[j].is_undefined)
 			ft_printf("%16c %c %s\n", ' ', symbols[j].letter, symbols[j].name);
 		else
-			ft_printf("%016p %c %s\n", symbols[j].value, symbols[j].letter, symbols[j].name);
+			ft_printf("%016x %c %s\n", symbols[j].value, symbols[j].letter, symbols[j].name);
 	}
 	free(symbols);
 

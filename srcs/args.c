@@ -21,6 +21,7 @@ static void get_flags(char *arg, flags_t *flags) {
 	flags->r = false;
 	flags->p = false;
 	flags->h = false;
+	flags->multiple_files = false; // Assume multiple files unless only one file is provided
 
 	for (int j = 1; arg[j] != '\0'; j++) {
 		if (arg[j] == 'a') {

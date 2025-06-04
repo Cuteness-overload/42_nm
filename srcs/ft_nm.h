@@ -24,6 +24,7 @@
 		bool r;		// Reverse the sort order
 		bool p;		// Do not sort the symbols
 		bool h;		// Display help message
+		bool multiple_files; // True if multiple files are provided
 	} flags_t;
 
 	typedef struct sym_s {
@@ -57,5 +58,6 @@
 	uint16_t	uint16_to_host(uint16_t value, char file_endian);
 	uint32_t	uint32_to_host(uint32_t value, char file_endian);
 	uint64_t	uint64_to_host(uint64_t value, char file_endian);
+	void		sort_print(sym_t *symbols, size_t sym_index, flags_t *flags);
 
 #endif

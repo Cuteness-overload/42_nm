@@ -20,7 +20,7 @@ char get_letter_64(Elf64_Sym sym, Elf64_Shdr *shs_table, char *str_table, char f
 	else if (shndx == SHN_UNDEF)
 		letter = 'U';
 	else if (shndx == SHN_ABS)
-		letter = 'A';
+		letter = 'a';
 	else if (shndx == SHN_COMMON)
 		letter = 'c';
 	if (letter != '?')
@@ -86,7 +86,7 @@ char get_letter_32(Elf32_Sym sym, Elf32_Shdr *shs_table, char *str_table, char f
 	else if (shndx == SHN_UNDEF)
 		letter = 'U';
 	else if (shndx == SHN_ABS)
-		letter = 'A';
+		letter = 'a';
 	else if (shndx == SHN_COMMON)
 		letter = 'c';
 	if (letter != '?')

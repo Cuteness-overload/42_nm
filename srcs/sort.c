@@ -1,5 +1,32 @@
 #include "ft_nm.h"
 
+// Concession made. will not compare exactly like original code as it uses strcoll and LOCALE data for comparison.
+// This function will compare the strings in a case-insensitive manner, ignoring underscores and dots.
+static int strip_and_comp(char *Lname, char *Rname)
+{
+	int i = 0;
+	int j = 0;
+	while (Lname[i] && Rname[j]) {
+		if (!ft_isalnum(Lname[i])) {
+			i++;
+			continue;
+		}
+		else if (!ft_isalnum(Rname[j])) {
+			j++;
+			continue;
+		}
+		else {
+			char c1 = ft_tolower((unsigned char)Lname[i]);
+			char c2 = ft_tolower((unsigned char)Rname[j]);
+			if (c1 != c2)
+				return c1 - c2;
+			i++;
+			j++;
+		}
+	}
+	return ((unsigned char)Lname[i] - (unsigned char)Rname[j]);
+}
+
 static void merge(sym_t *array, int left, int mid, int right)
 {
 	int i, j, k;
@@ -19,7 +46,7 @@ static void merge(sym_t *array, int left, int mid, int right)
 	k = left; // Initial index of merged sub-array
 
 	while (i < n1 && j < n2) {
-		if (ft_strcmp((const char *)L[i].name, (const char *)R[j].name) <= 0) {
+		if (strip_and_comp(L[i].name, R[j].name) <= 0) {
 			array[k] = L[i];
 			i++;
 		} else {
@@ -61,7 +88,7 @@ static void reverse_merge(sym_t *array, int left, int mid, int right)
 	k = left; // Initial index of merged sub-array
 
 	while (i < n1 && j < n2) {
-		if (ft_strcmp((const char *)L[i].value, (const char *)R[j].value) >= 0) {
+		if (strip_and_comp(L[i].name, R[j].name) >= 0) {
 			array[k] = L[i];
 			i++;
 		} else {
@@ -83,6 +110,8 @@ static void reverse_merge(sym_t *array, int left, int mid, int right)
 		k++;
 	}
 }
+
+
 
 void merge_sort(sym_t *array, int left, int right)
 {

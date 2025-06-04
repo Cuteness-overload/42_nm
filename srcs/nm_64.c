@@ -1,7 +1,8 @@
 #include "ft_nm.h"
 
-static int symbols_64(Elf64_Ehdr *elf_header, Elf64_Shdr *shs_table, uint16_t i, char *file_content, flags_t *flags, size_t file_size)
+static int symbols_64(Elf64_Shdr *shs_table, uint16_t i, char *file_content, flags_t *flags, size_t file_size, const char *filename)
 {
+	Elf64_Ehdr	*elf_header = (Elf64_Ehdr *)file_content;
 	char 		file_endian = elf_header->e_ident[EI_DATA];
 
 	// Get sh_link to determine string table index (sh_link of symbol table is a string table)
@@ -56,27 +57,9 @@ static int symbols_64(Elf64_Ehdr *elf_header, Elf64_Shdr *shs_table, uint16_t i,
 			sym_index++;
 	}
 
-	// Check sort flags
-	if (!flags->p && !flags->u) {
-		if (flags->r)
-			reverse_merge_sort(symbols, 0, sym_index - 1);
-		else
-			merge_sort(symbols, 0, sym_index - 1);
-	}
-
-	for (size_t j = 0; j < sym_index; j++) {
-		if (flags->u && !symbols[j].is_undefined)
-			continue; // Skip defined symbols if -u flag is set
-		else if (flags->g && !symbols[j].is_external)
-			continue; // Skip non-external symbols if -g flag is set
-		else if (!flags->a && ((symbols[j].letter == 'N') || (symbols[j].letter =='A') || (symbols[j].letter == 'a')))
-			continue; // Skip debugging symbols if -a flag is not set
-		// now to print the symbol
-		if (symbols[j].is_undefined)
-			ft_printf("%16c %c %s\n", ' ', symbols[j].letter, symbols[j].name);
-		else
-			ft_printf("%016x %c %s\n", symbols[j].value, symbols[j].letter, symbols[j].name);
-	}
+	if (flags->multiple_files)
+		ft_printf("\n%s:\n", filename); // Print filename if multiple files are provided
+	sort_print(symbols, sym_index, flags);
 	free(symbols);
 
 	return 0;
@@ -99,12 +82,12 @@ int ft_nm_64(char *file_content, struct stat file_stat, const char *filename, fl
 
 	// Check if the file is an executable, shared object, or relocatable file
 	if (e_type != ET_EXEC && e_type != ET_DYN && e_type != ET_REL)
-		return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
+		return ft_printf("ft_nm: %s: file format not recognized\n", filename);
 
 	// check for e_shnum value. Cannot be greater than SHN_LORESERVE
 	// also check if e_shoff greater than file size (section header offset)
 	if ((e_shnum >= SHN_LORESERVE) || (e_shoff >= (long unsigned int)file_stat.st_size))
-		return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
+		return ft_printf("ft_nm: %s: file format not recognized\n", filename);
 
 	Elf64_Shdr	*shs_table = (Elf64_Shdr *)(file_content + e_shoff);
 
@@ -113,13 +96,13 @@ int ft_nm_64(char *file_content, struct stat file_stat, const char *filename, fl
 		// check if we are in bounds of string table
 		// sh_name is Elf64_Word, sh_size is Elf64_Xword
 		if (uint32_to_host(shs_table[i].sh_name, file_endian) > uint64_to_host(shs_table[e_shstrndx].sh_size, file_endian))
-			return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
+			return ft_printf("ft_nm: %s: file format not recognized\n", filename);
 	
 		int ret;
 		if (uint32_to_host(shs_table[i].sh_type, file_endian) == SHT_SYMTAB) {
-			if ((ret = symbols_64(elf_header, shs_table, i, file_content, flags, file_stat.st_size))) {
+			if ((ret = symbols_64(shs_table, i, file_content, flags, file_stat.st_size, filename)) != 0) {
 				if (ret == 1)
-					return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
+					return ft_printf("ft_nm: %s: file format not recognized\n", filename);
 				else
 					return 1;
 			}
@@ -127,6 +110,8 @@ int ft_nm_64(char *file_content, struct stat file_stat, const char *filename, fl
 				return 0; // Successfully processed the symbol table
 		}
 	}
-	ft_printf("ft_nm: '%s': no symbols\n", filename);
+	if (flags->multiple_files)
+		ft_printf("\n%s:\n", filename); // Print filename if multiple files are provided
+	ft_printf("ft_nm: %s: no symbols\n", filename);
 	return 0; // No symbol table found
 }

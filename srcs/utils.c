@@ -44,3 +44,28 @@ bool is_valid_cstring(const char *str, const char *max_pointer) {
 			return false;
 	return true;
 }
+
+
+void sort_print(sym_t *symbols, size_t sym_index, flags_t *flags) {
+	// Check sort flags
+	if (!flags->p) {
+		if (flags->r)
+			reverse_merge_sort(symbols, 0, sym_index - 1);
+		else
+			merge_sort(symbols, 0, sym_index - 1);
+	}
+
+	for (size_t j = 0; j < sym_index; j++) {
+		if (flags->u && !symbols[j].is_undefined)
+			continue; // Skip defined symbols if -u flag is set
+		else if (flags->g && !symbols[j].is_external)
+			continue; // Skip non-external symbols if -g flag is set
+		else if (!flags->a && ((symbols[j].letter == 'N') || (symbols[j].letter =='A') || (symbols[j].letter == 'a')))
+			continue; // Skip debugging symbols if -a flag is not set
+		// now to print the symbol
+		if (symbols[j].is_undefined)
+			ft_printf("%16c %c %s\n", ' ', symbols[j].letter, symbols[j].name);
+		else
+			ft_printf("%016x %c %s\n", symbols[j].value, symbols[j].letter, symbols[j].name);
+	}
+}

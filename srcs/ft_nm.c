@@ -21,7 +21,7 @@ static int ft_nm_process(char *file_content, struct stat file_stat, const char *
 			else if ((long unsigned int)file_stat.st_size < sizeof(Elf32_Ehdr) + sizeof(Elf32_Shdr))
 				return ft_printf("ft_nm: '%s' symbol table or string table not found\n", filename);
 			else
-				return ft_nm_32(file_content, file_stat, filename, flags); // TODO: implement ft_nm_32
+				return ft_nm_32(file_content, file_stat, filename, flags);
 		}
 	}
 	return ft_printf("ft_nm: '%s': file format not recognized\n", filename);
@@ -43,7 +43,7 @@ static int ft_nm(int fd, const char *filename, flags_t *flags)
 	// https://nathanotterness.com/2021/10/tiny_elf_modernized.html
 	// Check for minimum ELF file size (Elf32_Ehdr smaller than Elf64_Ehdr)
 	if ((long unsigned int)file_stat.st_size < sizeof(Elf32_Ehdr))
-		return ft_printf("ft_nm: '%s' file format not recognized\n", filename);
+		return ft_printf("ft_nm: %s file format not recognized\n", filename);
 
 	// mmap the file content into memory + check for failure
 	if ((file_content = mmap(NULL, file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED)
@@ -64,10 +64,15 @@ int main(int argc, char **argv)
 	flags_t	flags;
 	int		fd;
 	char	**files;
+	int	len_files = 0;
 	bool	err = false;
 
 	// get flags and files from command line arguments
 	files = parse_args(argc, argv, &flags);
+	for (int i = 0; files[i] != NULL; i++)
+		len_files++;
+	if (len_files > 1)
+		flags.multiple_files = true; // Set the flag if multiple files are provided
 
 	// Continue with the rest of the program logic
 	for (int i = 0; files[i] != NULL; i++) {
